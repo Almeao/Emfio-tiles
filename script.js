@@ -14,6 +14,89 @@ gsap.ticker.add((time) => {
 gsap.ticker.lagSmoothing(0);
 
 
+
+
+// Function to animate .header_top height and border based on scroll position
+function animateHeaderOnScroll() {
+  const headerTop = document.querySelector('.header_top');
+  if (!headerTop) return;
+  const currentScrollY = window.scrollY;
+
+  if (currentScrollY > 10) {
+    // Scroll Y > 2: height 5vh and border bottom
+    gsap.to(headerTop, {
+      height: "5vh",
+      borderBottom: "0.5px solid #00000065",
+      duration: 0.4,
+      ease: "expoScale(1,2,power2.inOut)",
+
+      overwrite: "auto"
+    });
+  } else {
+    // Scroll Y <= 2: height 10vh and remove border bottom
+    gsap.to(headerTop, {
+      height: "10vh",
+      borderBottom: "none",
+      duration: 0.4,
+      ease: "expoScale(1,2,power2.inOut)",
+      overwrite: "auto"
+    });
+  }
+}
+
+// Attach function to the 'scroll' event of the window
+window.addEventListener('scroll', animateHeaderOnScroll);
+
+// Also, set on page load to ensure correct state
+animateHeaderOnScroll();
+
+
+
+
+
+// Animate entire header hide on scroll down, show on scroll up
+(function () {
+  const header = document.querySelector('header');
+  if (!header) return;
+
+  let lastScrollY = window.scrollY;
+  let ticking = false;
+
+  function onScroll() {
+    const currentScrollY = window.scrollY;
+    if (currentScrollY > lastScrollY && currentScrollY > 10) {
+      // Scrolling down, hide header
+      gsap.to(header, {
+        y: "-100%",
+        duration: 1,
+        ease: "power4.out",
+        overwrite: true
+      });
+    } else {
+      // Scrolling up, show header
+      gsap.to(header, {
+        y: "0%",
+        duration: 1,
+        ease: "power4.out",
+        overwrite: true
+      });
+    }
+    lastScrollY = currentScrollY;
+    ticking = false;
+  }
+
+  window.addEventListener("scroll", function () {
+    if (!ticking) {
+      requestAnimationFrame(onScroll);
+      ticking = true;
+    }
+  });
+})();
+
+
+
+
+
 const btn1 = document.querySelector('.header_top_option_1');
 const curtain1 = document.querySelector('.headder_container1_cover');
 const headerTop1 = document.querySelector('.header_top');
@@ -39,7 +122,7 @@ if (btn1 && curtain1 && headerTop1 && main1) {
     });
     headerTop1.style.borderBottom = "0.5px solid #00000065";
     gsap.to(main1, {
-      filter: "blur(8px)",
+      filter: "blur(15px)",
       duration: 0.4,
       ease: "power2.out",
       overwrite: "auto"
@@ -120,7 +203,7 @@ if (btn2 && curtain2 && main1) {
     });
     headerTop1.style.borderBottom = "0.5px solid #00000065";
     gsap.to(main1, {
-      filter: "blur(8px)",
+      filter: "blur(15px)",
       duration: 0.4,
       ease: "power2.out",
       overwrite: "auto"
@@ -175,3 +258,58 @@ if (btn2 && curtain2 && main1) {
   });
 
 }
+
+
+
+
+
+
+gsap.from(".part4_main_animation_image", {
+  scale: 9,
+  duration: 0.7,
+  ease: "expoScale(1,2,power4.inOut)",
+  scrollTrigger: {
+    trigger: ".part4",
+    start: "top 10%",    // When .part4's top enters 80% of the viewport height
+    once: true,          // Only play once
+    toggleActions: "play none none none",
+  },
+  onComplete: () => {
+    // The issue was with your selector: "part4 img" is missing the dot for class, should be ".part4 img".
+    // Also, document.querySelector only selects the FIRST image, so only the first image moves.
+    // If you want to move ALL images at once, use document.querySelectorAll to get a NodeList.
+    // Then animate all of them inside a loop or with gsap.utils.toArray.
+
+    const imgs = document.querySelectorAll(".part4 img");
+    let currentPosition = 0;
+    const stepSize = 100;  // If each image is 25% width
+    const numImages = imgs.length;
+    const maxLimit = numImages * stepSize;
+
+    function moveSlider() {
+      currentPosition -= stepSize;
+      imgs.forEach(img => {
+        gsap.to(img, {
+          xPercent: currentPosition,
+          duration: 1,
+          ease: "power2.inOut",
+          delay: 2,
+          onComplete: () => {
+            // Only trigger reset on the last image to avoid multiple resets
+            if (img === imgs[imgs.length - 1]) {
+              if (Math.abs(currentPosition) >= maxLimit) {
+                currentPosition = 0;
+                imgs.forEach(img2 => gsap.set(img2, { xPercent: 0 }));
+              }
+              moveSlider();
+            }
+          }
+        });
+      });
+    }
+
+    if (imgs.length > 1) moveSlider();
+  }
+  }
+
+);
